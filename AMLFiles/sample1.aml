@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ARG SYSTEM "argument.dtd">
+<ARG>
+  <?Araucaria UTF-8?>
+  <SCHEMESET>
+    <SCHEME>
+      <NAME>Argument from Position to Know</NAME>
+      <FORM>
+        <PREMISE>a is in a position to know whether A is true</PREMISE>
+        <PREMISE>a asserts that A is true</PREMISE>
+        <CONCLUSION>A is true</CONCLUSION>
+      </FORM>
+      <CQ>Is a in a position to know whether A is true?</CQ>
+      <CQ>Is a an honest (trustworthy, reliable) source?</CQ>
+      <CQ>Did a actually assert that A is true?</CQ>
+    </SCHEME>
+  </SCHEMESET>
+  <TEXT>Vice Chancellor Brown has claimed that semesterisation would lead to a reduced workload for staff, more flexibility for students, and simpler administration for the university. It seems to me, however, that semesterisation is going to involve an enormous amount of work and should be avoided at all costs. </TEXT>
+  <EDATA>
+    <AUTHOR>null</AUTHOR>
+    <DATE>2003-05-09</DATE>
+    <SOURCE />
+    <COMMENTS />
+  </EDATA>
+  <AU>
+    <PROP identifier="D" missing="yes">
+      <PROPTEXT offset="-1">semesterisation is a good idea</PROPTEXT>
+      <OWNER name="VCBrown" />
+    </PROP>
+    <REFUTATION>
+      <AU>
+        <PROP identifier="E" missing="no">
+          <PROPTEXT offset="274">should be avoided at all costs</PROPTEXT>
+          <OWNER name="Speaker" />
+        </PROP>
+        <CA>
+          <AU>
+            <PROP identifier="F" missing="no">
+              <PROPTEXT offset="207">semesterisation is going to involve an enormous amount of work</PROPTEXT>
+              <OWNER name="Speaker" />
+            </PROP>
+          </AU>
+        </CA>
+      </AU>
+    </REFUTATION>
+    <CA>
+      <AU>
+        <PROP identifier="B" missing="no">
+          <PROPTEXT offset="99">more flexibility for students</PROPTEXT>
+          <OWNER name="VCBrown" />
+        </PROP>
+      </AU>
+    </CA>
+    <CA>
+      <AU>
+        <PROP identifier="C" missing="no">
+          <PROPTEXT offset="142">administration for the university</PROPTEXT>
+          <OWNER name="VCBrown" />
+        </PROP>
+      </AU>
+    </CA>
+    <CA>
+      <AU>
+        <PROP identifier="A" missing="no">
+          <PROPTEXT offset="39">semesterisation would lead to a reduced workload for staff</PROPTEXT>
+          <OWNER name="VCBrown" />
+        </PROP>
+      </AU>
+    </CA>
+  </AU>
+</ARG>
+
