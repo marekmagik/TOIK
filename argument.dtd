@@ -2,7 +2,7 @@
      *                                    *
      *   argument.dtd                     *
      *                                    *
-     *   XML DTD for Argument Markup      *
+     *   XML DTD for pl.edu.agh.araucaria.Argument Markup      *
      *   Version 1.5.1                    *
      *                                    *
      *   17 June 2004                     *
@@ -189,7 +189,7 @@
      structure supporting the topmost conclusion. Includes any number
      of SCHEME definitions. There is no requirement that any or
      all of these schemes be used in the argument that follows.
-     The Araucaria software assumes that any schemes used in the
+     The main.java.Araucaria software assumes that any schemes used in the
      argument are defined in this section.
 -->
 <!ELEMENT SCHEMESET (SCHEME)*>
