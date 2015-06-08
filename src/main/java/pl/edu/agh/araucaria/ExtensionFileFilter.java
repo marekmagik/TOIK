@@ -39,7 +39,7 @@ import java.util.Hashtable;
  */
 public class ExtensionFileFilter extends FileFilter {
 
-    private Hashtable<String, ExtensionFileFilter> filters = new Hashtable<String, ExtensionFileFilter>();
+    private Hashtable<String, ExtensionFileFilter> filters = new Hashtable<>();
     private String description = null;
     private String fullDescription = null;
 
@@ -79,6 +79,7 @@ public class ExtensionFileFilter extends FileFilter {
      * @see #getExtension
      * //* @see FileFilter#accepts
      */
+    @Override
     public boolean accept(File f) {
         if (f != null) {
             if (f.isDirectory()) {
@@ -98,7 +99,7 @@ public class ExtensionFileFilter extends FileFilter {
      * @see #getExtension
      * @see FileFilter#accept
      */
-    public String getExtension(File f) {
+    private String getExtension(File f) {
         if (f != null) {
             String filename = f.getName();
             int i = filename.lastIndexOf('.');
@@ -131,31 +132,25 @@ public class ExtensionFileFilter extends FileFilter {
      * Returns the human readable description of this filter. For
      * example: "JPEG and GIF Image Files (*.jpg, *.gif)"
      *
-     * @see setDescription
-     * @see setExtensionListInDescription
-     * @see isExtensionListInDescription
      * @see FileFilter#getDescription
      */
+    @Override
     public String getDescription() {
         if (fullDescription == null) {
-            if (description == null || isExtensionListInDescription()) {
-                fullDescription = description == null ? "(" : description + " (";
-                // build the description from the extension list
+            fullDescription = description == null ? "(" : description + " (";
+            // build the description from the extension list
 
-                StringBuilder descriptionBuilder = new StringBuilder(fullDescription);
+            StringBuilder descriptionBuilder = new StringBuilder(fullDescription);
 
-                Enumeration extensions = filters.keys();
-                if (extensions != null) {
-                    descriptionBuilder.append(".").append(extensions.nextElement());
-                    while (extensions.hasMoreElements()) {
-                        descriptionBuilder.append(", ").append(extensions.nextElement());
-                    }
+            Enumeration extensions = filters.keys();
+            if (extensions != null) {
+                descriptionBuilder.append(".").append(extensions.nextElement());
+                while (extensions.hasMoreElements()) {
+                    descriptionBuilder.append(", ").append(extensions.nextElement());
                 }
-                descriptionBuilder.append(")");
-                fullDescription = descriptionBuilder.toString();
-            } else {
-                fullDescription = description;
             }
+            descriptionBuilder.append(")");
+            fullDescription = descriptionBuilder.toString();
         }
         return fullDescription;
     }
@@ -163,29 +158,9 @@ public class ExtensionFileFilter extends FileFilter {
     /**
      * Sets the human readable description of this filter. For
      * example: filter.setDescription("Gif and JPG Images");
-     *
-     * @see setDescription
-     * @see setExtensionListInDescription
-     * @see isExtensionListInDescription
      */
-    public void setDescription(String description) {
+    private void setDescription(String description) {
         this.description = description;
         fullDescription = null;
     }
-
-    /**
-     * Returns whether the extension list (.jpg, .gif, etc) should
-     * show up in the human readable description.
-     * <p/>
-     * Only relevent if a description was provided in the constructor
-     * or using setDescription();
-     *
-     * @see getDescription
-     * @see setDescription
-     * @see setExtensionListInDescription
-     */
-    public boolean isExtensionListInDescription() {
-        return true;
-    }
-
 }

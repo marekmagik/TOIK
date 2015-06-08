@@ -4,8 +4,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
+import pl.edu.agh.araucaria.aml.TextSearchTableModel;
+import pl.edu.agh.araucaria.aml.TreeSearchContentHandler;
 import pl.edu.agh.araucaria.db.ConnectionConfig;
 import pl.edu.agh.araucaria.db.DAO;
+import pl.edu.agh.araucaria.db.DBSourceComments;
 import pl.edu.agh.araucaria.db.dialog.LoginDialog;
 import pl.edu.agh.araucaria.db.dialog.RegistrationDialog;
 import pl.edu.agh.araucaria.db.utils.BaseRecord;
@@ -14,11 +17,35 @@ import pl.edu.agh.araucaria.exceptions.DatabaseConnectionException;
 import pl.edu.agh.araucaria.exceptions.LinkException;
 import pl.edu.agh.araucaria.exceptions.SubtreeException;
 import pl.edu.agh.araucaria.gui.dialogs.AboutDialog;
+import pl.edu.agh.araucaria.gui.dialogs.HelpHTMLDialog;
+import pl.edu.agh.araucaria.gui.dialogs.LabelDialog;
+import pl.edu.agh.araucaria.gui.dialogs.MarkingDialog;
+import pl.edu.agh.araucaria.gui.dialogs.OwnerDialog;
+import pl.edu.agh.araucaria.gui.dialogs.PropertiesDialog;
+import pl.edu.agh.araucaria.gui.dialogs.SearchFrame;
+import pl.edu.agh.araucaria.gui.panels.DisplayFrame;
+import pl.edu.agh.araucaria.gui.panels.FreeVertexPanel;
+import pl.edu.agh.araucaria.gui.popups.SubtreeFrame;
 import pl.edu.agh.araucaria.history.EditAction;
 import pl.edu.agh.araucaria.history.UndoStack;
-import pl.edu.agh.araucaria.wigmore.WigmoreFullSizePanel;
-import pl.edu.agh.araucaria.wigmore.WigmoreFullTextPanel;
-import pl.edu.agh.araucaria.wigmore.WigmoreScaledPanel;
+import pl.edu.agh.araucaria.model.ArgInfoFrame;
+import pl.edu.agh.araucaria.model.Argument;
+import pl.edu.agh.araucaria.model.Tree;
+import pl.edu.agh.araucaria.model.TreeEdge;
+import pl.edu.agh.araucaria.model.TreeVertex;
+import pl.edu.agh.araucaria.prefs.Preferences;
+import pl.edu.agh.araucaria.gui.panels.text.SelectText;
+import pl.edu.agh.araucaria.tutor.TutorDialog;
+import pl.edu.agh.araucaria.gui.visualisation.core.DiagramBase;
+import pl.edu.agh.araucaria.gui.visualisation.standard.FullPanel;
+import pl.edu.agh.araucaria.gui.visualisation.standard.FullSizePanel;
+import pl.edu.agh.araucaria.gui.visualisation.standard.FullTextPanel;
+import pl.edu.agh.araucaria.gui.visualisation.toulmin.ToulminFullSizePanel;
+import pl.edu.agh.araucaria.gui.visualisation.toulmin.ToulminFullTextPanel;
+import pl.edu.agh.araucaria.gui.visualisation.toulmin.ToulminScaledPanel;
+import pl.edu.agh.araucaria.gui.visualisation.wigmore.WigmoreFullSizePanel;
+import pl.edu.agh.araucaria.gui.visualisation.wigmore.WigmoreFullTextPanel;
+import pl.edu.agh.araucaria.gui.visualisation.wigmore.WigmoreScaledPanel;
 import pl.edu.agh.araucaria.xml.XMLContentHandler;
 import pl.edu.agh.araucaria.xml.XMLErrorHandler;
 
@@ -232,7 +259,7 @@ public class Araucaria extends JFrame implements ControlFrame {
         initDialogs();
         initDatabase();
         // Set up the preferences dialog - the prefs.dat file is loaded
-        // in the pl.edu.agh.araucaria.Preferences constructor
+        // in the pl.edu.agh.araucaria.prefs.Preferences constructor
         preferencesDialog = new Preferences(this, true);
         addKeyResponses();
         loadRecentFiles();
@@ -541,6 +568,7 @@ public class Araucaria extends JFrame implements ControlFrame {
 
         // Text panel
         selectTextScroll = new JScrollPane();
+        //TODO: umo¿liwiæ edycjê
         selectText = new SelectText();
         selectText.setPreferredSize(new Dimension(SelectText.PREFERRED_WIDTH, SelectText.PREFERRED_HEIGHT));
 
@@ -597,7 +625,7 @@ public class Araucaria extends JFrame implements ControlFrame {
         // Properties
         Action propertiesAction = new FileActionHandler("");
         propertiesAction.putValue(Action.SHORT_DESCRIPTION, "Properties");
-        // pl.edu.agh.araucaria.Preferences
+        // pl.edu.agh.araucaria.prefs.Preferences
         Action preferencesAction = new FileActionHandler("");
         preferencesAction.putValue(Action.SHORT_DESCRIPTION, "Set preferences");
         // Exit
@@ -819,10 +847,10 @@ public class Araucaria extends JFrame implements ControlFrame {
         propertiesMenu.setMnemonic('r');
         propertiesMenu.setText("Properties");
         fileMenu.add(propertiesMenu);
-        // pl.edu.agh.araucaria.Preferences
+        // pl.edu.agh.araucaria.prefs.Preferences
         preferencesMenuItem.setAction(preferencesAction);
         preferencesMenuItem.setMnemonic('P');
-        preferencesMenuItem.setText("pl.edu.agh.araucaria.Preferences");
+        preferencesMenuItem.setText("pl.edu.agh.araucaria.prefs.Preferences");
         fileMenu.add(preferencesMenuItem);
         // Recent file menus
         recentTextFilesMenu = new JMenu("Open recent text");
@@ -1084,16 +1112,16 @@ public class Araucaria extends JFrame implements ControlFrame {
         // Scrolls the text faster with mouse wheel
         selectTextScroll.getVerticalScrollBar().setUnitIncrement(30);
 
-        getContentPane().add(selectTextScroll, java.awt.BorderLayout.WEST);
+        getContentPane().add(selectTextScroll, BorderLayout.WEST);
 
         // Status bar
-        messagePanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-        messagePanel.setBackground(new java.awt.Color(255, 255, 153));
+        messagePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        messagePanel.setBackground(new Color(255, 255, 153));
         messageLabel.setHorizontalAlignment(SwingConstants.LEFT);
         messageLabel.setText("Messages will be displayed here.");
         messageLabel.setToolTipText("Messages are displayed here");
         messagePanel.add(messageLabel);
-        getContentPane().add(messagePanel, java.awt.BorderLayout.SOUTH);
+        getContentPane().add(messagePanel, BorderLayout.SOUTH);
 
         // General main frame properties
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -1225,7 +1253,7 @@ public class Araucaria extends JFrame implements ControlFrame {
     }
 
     /**
-     * Opens a text file for display in a pl.edu.agh.araucaria.SelectText panel. The text should be in standard UTF-8
+     * Opens a text file for display in a pl.edu.agh.araucaria.gui.panels.text.SelectText panel. The text should be in standard UTF-8
      * format.
      */
     public void openTextFile() {
@@ -1315,9 +1343,8 @@ public class Araucaria extends JFrame implements ControlFrame {
      * Reads in an AML file containing data for markup of a single argument.
      */
     public void readAML() {
-        File saveDirectory = null;
         String fileName = "";
-        File chosenFile = null;
+        File chosenFile;
         try {
             amlChoice.setDialogTitle("Open argument");
             // Sets directory to amlDirectory specified in preferences
@@ -1371,7 +1398,7 @@ public class Araucaria extends JFrame implements ControlFrame {
             messageLabel.setText("File " + fileName + " read successfully.");
             setTitle(mainFrameTitle + " - " + fileName);
             currentOpenXMLFile = chosenFile;
-            //     m_wordCount = pl.edu.agh.araucaria.SelectText.wordCount(selectText.text);
+            //     m_wordCount = pl.edu.agh.araucaria.gui.panels.text.SelectText.wordCount(selectText.text);
             clearUndoStack();
             recentAmlFiles.remove(fileName);
             recentAmlFiles.push(fileName);
@@ -1390,7 +1417,7 @@ public class Araucaria extends JFrame implements ControlFrame {
     }
 
     /**
-     * This version is called by doTreeSearch() and uses a pl.edu.agh.araucaria.TreeSearchContentHandler
+     * This version is called by doTreeSearch() and uses a pl.edu.agh.araucaria.aml.TreeSearchContentHandler
      * to do the parsing. This builds the tree but ignores all schemesets, text, etc.
      */
     public void parseXMLwithSAX(InputSource source, Tree tree) throws Exception {
@@ -1472,7 +1499,7 @@ public class Araucaria extends JFrame implements ControlFrame {
                         messageLabel.setText("Error writing XML file.\n");
                     }
                 } else {
-                    messageLabel.setText("pl.edu.agh.araucaria.Argument not saved.");
+                    messageLabel.setText("pl.edu.agh.araucaria.model.Argument not saved.");
                 }
             } else {
                 if (argument.doSaveXMLFile(currentOpenXMLFile)) {
@@ -1495,7 +1522,7 @@ public class Araucaria extends JFrame implements ControlFrame {
             messageLabel.setText("No argument - nothing to save.");
             return true;
         } else if (argument.getTree().getRoots().size() > 1) {
-            messageLabel.setText("pl.edu.agh.araucaria.Argument has more than one conclusion - please complete the diagram.");
+            messageLabel.setText("pl.edu.agh.araucaria.model.Argument has more than one conclusion - please complete the diagram.");
             return true;
         }
         return false;
@@ -1678,7 +1705,7 @@ public class Araucaria extends JFrame implements ControlFrame {
             setMessageLabelText("Nothing more to redo");
             return;
         }
-        EditAction action = (EditAction) undoStack.elementAt(++undoStack.undoPointer);
+        EditAction action = undoStack.elementAt(++undoStack.undoPointer);
         if (undoStack.undoPointer == undoStack.size() - 1) {
             redoMenuItem.setEnabled(false);
             redoToolBar.setEnabled(false);
@@ -1699,8 +1726,8 @@ public class Araucaria extends JFrame implements ControlFrame {
             setMessageLabelText("Nothing more to undo");
             return;
         }
-        EditAction undoingAction = (EditAction) undoStack.elementAt(undoStack.undoPointer);
-        EditAction action = (EditAction) undoStack.elementAt(--undoStack.undoPointer);
+        EditAction undoingAction = undoStack.elementAt(undoStack.undoPointer);
+        EditAction action = undoStack.elementAt(--undoStack.undoPointer);
         if (undoStack.undoPointer <= 0) {
             undoMenuItem.setEnabled(false);
             undoToolBar.setEnabled(false);
@@ -1724,10 +1751,10 @@ public class Araucaria extends JFrame implements ControlFrame {
                         "Do you want to continue?</b></font></center></html>", "New argument tree?",
                 JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null);
         if (action == 1) {
-            setMessageLabelText("pl.edu.agh.araucaria.Tree not erased.");
+            setMessageLabelText("pl.edu.agh.araucaria.model.Tree not erased.");
             return;
         }
-        argument.topWigmoreIndex = 0;
+        argument.setTopWigmoreIndex(0);
         argument.emptyTree(true);
         updateDisplays(true);
         updateSelectText();
@@ -1745,8 +1772,8 @@ public class Araucaria extends JFrame implements ControlFrame {
                 "Enter text for missing premise.                                                                                ",
                 "Missing premise", JOptionPane.QUESTION_MESSAGE);
         if (missingPremise != null) {
-            //          missingPremise = pl.edu.agh.araucaria.SelectText.stripWhiteSpace(missingPremise);
-            //          missingPremise = pl.edu.agh.araucaria.SelectText.stripWeirdChars(missingPremise);
+            //          missingPremise = pl.edu.agh.araucaria.gui.panels.text.SelectText.stripWhiteSpace(missingPremise);
+            //          missingPremise = pl.edu.agh.araucaria.gui.panels.text.SelectText.stripWeirdChars(missingPremise);
             argument.addFreeVertex(missingPremise, null, -1, currentDiagram.getMainDiagramPanel());
             updateDisplays(true);
             undoStack.push(new EditAction(Araucaria.this, "adding missing premise"));
@@ -1773,8 +1800,8 @@ public class Araucaria extends JFrame implements ControlFrame {
             updateSelectText();
 
             // Update the Wigmore index after deletion
-            argument.topWigmoreIndex = 0;
-            for (Object vertex : argument.tree.getVertexList()) {
+            argument.setTopWigmoreIndex(0);
+            for (Object vertex : argument.getTree().getVertexList()) {
                 String label = ((TreeVertex) vertex).getShortLabelString();
                 argument.updateWigmoreIndex(label);
             }
@@ -1785,7 +1812,7 @@ public class Araucaria extends JFrame implements ControlFrame {
     }
 
     public void doLink() {
-        Vector selectedVerts = null;
+        Vector selectedVerts;
         try {
             selectedVerts = argument.linkVertices();
         } catch (LinkException e) {
@@ -1811,7 +1838,7 @@ public class Araucaria extends JFrame implements ControlFrame {
     }
 
     public void doUnlink() {
-        Vector selectedVerts = null;
+        Vector selectedVerts;
         try {
             selectedVerts = argument.unlinkVertices();
         } catch (LinkException e) {
@@ -2070,7 +2097,6 @@ public class Araucaria extends JFrame implements ControlFrame {
                     setMessageLabelText("File does not exist.");
                     return;
                 }
-                inputStream = new FileInputStream(chosenFile);
                 fileName = chosenFile.getAbsolutePath();
             } else {
                 setMessageLabelText("Schemeset not read.");
@@ -2288,7 +2314,7 @@ public class Araucaria extends JFrame implements ControlFrame {
             ResultSet resultSet = statement.executeQuery(sql);
 
             // If resultSet has any entries, username already exists
-            while (resultSet.next()) {
+            if (resultSet.next()) {
                 return false;
             }
             resultSet.close();
@@ -2487,9 +2513,9 @@ public class Araucaria extends JFrame implements ControlFrame {
         searchFrame.setVisible(true);
     }
 
-    void doTextSearchOnDB(String text, String startTag, String endTag,
-                          TextSearchTableModel textSearchTableModel,
-                          JTable textSearchTable) {
+    public void doTextSearchOnDB(String text, String startTag, String endTag,
+                                 TextSearchTableModel textSearchTableModel,
+                                 JTable textSearchTable) {
 
         // Need to turn off combo box events until the combo box items have been added.
         doComboEvents = false;
@@ -2719,10 +2745,10 @@ public class Araucaria extends JFrame implements ControlFrame {
     public void doProperties() {
         PropertiesDialog propertiesDialog = new PropertiesDialog(this);
         propertiesDialog.setVisible(true);
-        if (propertiesDialog.okPressed) {
-            argument.author = propertiesDialog.author.getText();
-            argument.source = propertiesDialog.sourceText.getText();
-            argument.comments = propertiesDialog.commentsText.getText();
+        if (propertiesDialog.isOkPressed()) {
+            argument.setAuthor(propertiesDialog.author.getText());
+            argument.setSource(propertiesDialog.sourceText.getText());
+            argument.setComments(propertiesDialog.commentsText.getText());
         }
     }
 

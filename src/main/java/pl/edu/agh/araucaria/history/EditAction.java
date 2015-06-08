@@ -3,21 +3,21 @@ package pl.edu.agh.araucaria.history;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import pl.edu.agh.araucaria.Araucaria;
-import pl.edu.agh.araucaria.Argument;
-import pl.edu.agh.araucaria.TreeVertex;
+import pl.edu.agh.araucaria.model.Argument;
+import pl.edu.agh.araucaria.model.TreeVertex;
 
-import java.awt.geom.GeneralPath;
 import java.io.ByteArrayInputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
 public class EditAction {
-    public String amlString;
-    public Vector freeVertexList, freeVertexListIDs;
-    public Vector hiddenList;
-    public String shortLabel;
-    public Araucaria parent;
-    public Argument argument;
+    private String amlString;
+    private Vector<TreeVertex> freeVertexList;
+    private Vector freeVertexListIDs;
+    private Vector hiddenList;
+    private String shortLabel;
+    private Araucaria parent;
+    private Argument argument;
     public String description, message;
 
     public EditAction(Araucaria a, String d) {
@@ -55,15 +55,17 @@ public class EditAction {
         parent.updateSelectText();
         // Now add any free vertexes
         for (int i = 0; i < freeVertexList.size(); i++) {
-            TreeVertex freeVertex = (TreeVertex) freeVertexList.elementAt(i);
+            TreeVertex freeVertex = freeVertexList.elementAt(i);
             freeVertex.setSelected(false);
-            freeVertex.setShortLabel((String) freeVertexListIDs.elementAt(i));
+//TODO : sprawdzić zmianę
+
+            freeVertex.setShortLabel(new String((char[]) freeVertexListIDs.elementAt(i)));
             argument.getFreeVertexList().add(freeVertex);
             freeVertex.setHasParent(false);
             freeVertex.deleteAllEdges();
             freeVertex.initRoles();
             if (!freeVertex.isMissing()) {
-                parent.getSelectText().getSelectedList().add((GeneralPath) freeVertex.getAuxObject());
+                parent.getSelectText().getSelectedList().add(freeVertex.getAuxObject());
             }
         }
 

@@ -1,8 +1,11 @@
-package pl.edu.agh.araucaria.xml; /**
- * <b>MyContentHandler</b> implements the SAX
- * ContentHandler interface and defines callback
- * behavior for the SAX callbacks associated with an XML
- * document's content.
+package pl.edu.agh.araucaria.tutor;/*
+ * pl.edu.agh.araucaria.tutor.TutorContentHandler.java
+ *
+ * Created on 07 March 2004, 08:08
+ */
+
+/**
+ * @author growe
  */
 
 import org.xml.sax.Attributes;
@@ -10,42 +13,47 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import pl.edu.agh.araucaria.model.ArgType;
-import pl.edu.agh.araucaria.model.Argument;
-import pl.edu.agh.araucaria.model.Subtree;
 import pl.edu.agh.araucaria.model.Tree;
 import pl.edu.agh.araucaria.model.TreeVertex;
 
-import java.awt.geom.GeneralPath;
-import java.util.Hashtable;
 import java.util.Stack;
 import java.util.Vector;
+/**
+ * <b>MyContentHandler</b> implements the SAX 
+ *   ContentHandler interface and defines callback
+ *   behavior for the SAX callbacks associated with an XML
+ *   document's content.
+ */
 
-
-public class XMLContentHandler implements ContentHandler {
-
-    private String contents = "";
-    private Argument argument;
-    private Tree tree;
-    private Stack vertexStack = new Stack();
-    private TreeVertex currentVertex = null;
-    private GeneralPath shape = null;
-    private Vector argTypeVector;
-    private Hashtable diagramRoles;
-    private ArgType argType = null;
-    private String supportLabel = "";
-    private String nodeLabel = "";
-    private String shortLabel = " ";
-    private boolean missing = false;
-    private boolean refutation = false;
-    private int offset;
-    private int tutorStart;
-    private int tutorEnd;
+/**
+ * Used by SAX to read in an AML file and extract the tree
+ * structure from it - ignores schemesets, prop-texts etc.
+ * Used in tree searches.
+ */
+public class TutorContentHandler implements ContentHandler {
+    String contents = "";
+    Tree m_tree;
+    Stack vertexStack = new Stack();
+    TreeVertex currentVertex = null;
+    boolean refutation = false;
+    Vector argTypeVector;
+    ArgType argType = null;
+    String missingString = "no";
+    String supportLabel = "";
+    String nodeLabel = "";
+    String shortLabel = " ";
+    boolean missing = false;
+    int offset, tutorStart, tutorEnd;
+    String propText;
     private boolean readContents = false;
 
-    public XMLContentHandler(Argument arg) {
-        argument = arg;
-        tree = arg.getTree();
+    /**
+     * Creates a new instance of pl.edu.agh.araucaria.tutor.TutorContentHandler
+     */
+    public TutorContentHandler(Tree tree) {
+        m_tree = tree;
     }
+
 
     /**
      * <p>
@@ -57,7 +65,6 @@ public class XMLContentHandler implements ContentHandler {
      *                process
      */
     public void setDocumentLocator(Locator locator) {
-        // We save this for later use if desired.
     }
 
     /**
@@ -97,7 +104,6 @@ public class XMLContentHandler implements ContentHandler {
      */
     public void processingInstruction(String target, String data)
             throws SAXException {
-        // TODO: restore the data encoding in main.java.Araucaria class
     }
 
     /**
@@ -116,6 +122,8 @@ public class XMLContentHandler implements ContentHandler {
      *               being reported
      */
     public void startPrefixMapping(String prefix, String uri) {
+//        System.out.println("Mapping starts for prefix " + prefix + 
+//                           " mapped to URI " + uri);
     }
 
     /**
@@ -128,6 +136,7 @@ public class XMLContentHandler implements ContentHandler {
      * @param prefix String of namespace being reported
      */
     public void endPrefixMapping(String prefix) {
+//        System.out.println("Mapping ends for prefix " + prefix);
     }
 
     /**
@@ -153,7 +162,6 @@ public class XMLContentHandler implements ContentHandler {
                              String rawName, Attributes atts)
             throws SAXException {
 
-        String attName, attValue;
         // We've now read the opening tag and attribute list, so we
         // can now process each tag and build the argument tree
         switch (rawName) {
@@ -173,7 +181,7 @@ public class XMLContentHandler implements ContentHandler {
                 TreeVertex virtualVertex = new TreeVertex("", "V");
                 virtualVertex.setVirtual(true);
                 virtualVertex.setHasParent(true);
-                tree.addVertex(virtualVertex);
+                m_tree.addVertex(virtualVertex);
                 currentVertex.addEdge(virtualVertex);
                 vertexStack.push(currentVertex);
                 vertexStack.push(virtualVertex);
@@ -183,28 +191,15 @@ public class XMLContentHandler implements ContentHandler {
                 refutation = true;
                 break;
             case "PROP":
-                tutorStart = tutorEnd = -1;
-                supportLabel = null;
-                nodeLabel = null;
-                diagramRoles = new Hashtable();
-                TreeVertex.initRoles(diagramRoles);
-                // Add default role for Toulmin node
-                diagramRoles.put("toulmin", "data");
-
                 for (int i = 0; i < atts.getLength(); i++) {
-                    attName = atts.getQName(i);
-                    attValue = atts.getValue(i);
+                    String attName = atts.getQName(i);
+                    String attValue = atts.getValue(i);
                     switch (attName) {
                         case "identifier":
-                            String idTag = attValue;
-                            // Remove Wigmore prefix for numerical IDs
-                            if (idTag.contains(Argument.WigmoreIDPrefix)) {
-                                idTag = idTag.substring(Argument.WigmoreIDPrefix.length());
-                            }
-                            shortLabel = idTag;
+                            shortLabel = attValue;
                             break;
                         case "missing":
-                            String missingString = attValue;
+                            missingString = attValue;
                             missing = (missingString.equals("yes"));
                             break;
                         case "supportlabel":
@@ -218,87 +213,17 @@ public class XMLContentHandler implements ContentHandler {
                 break;
             case "PROPTEXT":
                 for (int i = 0; i < atts.getLength(); i++) {
-                    attName = atts.getQName(i);
-                    attValue = atts.getValue(i);
+                    String attName = atts.getQName(i);
+                    String attValue = atts.getValue(i);
                     if (attName.equals("offset")) {
                         offset = Integer.parseInt(attValue);
                     }
                 }
                 break;
-            case "OWNER":
-                String ownerName = "";
-                attName = atts.getQName(0);
-                attValue = atts.getValue(0);
-                if (attName.equals("name")) {
-                    ownerName = attValue;
-                    Vector ownerVector = argument.ownerExists(ownerName, 0);
-                    if (ownerVector == null) {
-                        ownerVector = new Vector();
-                        String tla = argument.getTla(ownerName);
-                        if (tla == null) tla = "***";
-                        ownerVector.add(ownerName);
-                        ownerVector.add(tla);
-                        argument.addToOwnerList(ownerVector);
-                    }
-                    currentVertex.getOwners().add(ownerVector);
-                }
-                break;
-            case "INSCHEME":
-                String schemeID = "";
-                String schemeName = "";
-                for (int i = 0; i < atts.getLength(); i++) {
-                    attName = atts.getQName(i);
-                    attValue = atts.getValue(i);
-                    if (attName.equals("scheme")) {
-                        schemeName = attValue;
-                    } else if (attName.equals("schid")) {
-                        schemeID = attValue;
-                    }
-                }
-                Subtree subtree = argument.getSubtreeByLabel(schemeID);
-                if (subtree == null) {
-                    // Add a new subtree
-                    subtree = new Subtree();
-                    subtree.setShortLabel(schemeID);
-
-                    ArgType argType = argument.getArgTypeByName(schemeName);
-                    subtree.setArgumentType(argType);
-
-                    subtree.addVertex(currentVertex);
-                    argument.getSubtreeList().add(subtree);
-                } else {
-                    // Add vertex to existing subtree
-                    subtree.addVertex(currentVertex);
-                }
-                // Deal with subtrees containing linked arguments
-                if (!vertexStack.isEmpty()) {
-                    if (((TreeVertex) vertexStack.peek()).isVirtual()) {
-                        TreeVertex virtualTemp = (TreeVertex) vertexStack.pop();
-                        TreeVertex parentTemp = (TreeVertex) vertexStack.peek();
-                        if (subtree.containsTreeVertex(parentTemp)) {
-                            subtree.addVertex(virtualTemp);
-                        }
-                        vertexStack.push(virtualTemp);
-                    }
-                }
-                break;
-            case "ROLE":
-                String diagType = null, element = null;
-                for (int i = 0; i < atts.getLength(); i++) {
-                    attName = atts.getQName(i);
-                    attValue = atts.getValue(i);
-                    if (attName.equals("class")) {
-                        diagType = attValue;
-                    } else if (attName.equals("element")) {
-                        element = attValue;
-                    }
-                }
-                diagramRoles.put(diagType, element);
-                break;
             case "TUTOR":
                 for (int i = 0; i < atts.getLength(); i++) {
-                    attName = atts.getQName(i);
-                    attValue = atts.getValue(i);
+                    String attName = atts.getQName(i);
+                    String attValue = atts.getValue(i);
                     if (attName.equals("start")) {
                         tutorStart = Integer.parseInt(attValue);
                     } else if (attName.equals("end")) {
@@ -329,8 +254,6 @@ public class XMLContentHandler implements ContentHandler {
      * @param rawName      String name of element in XML 1.0 form
      * @throws SAXException when things go wrong
      */
-
-    // TODO: Remove references to m_canvas since display stuff doesn't belong here
     public void endElement(String namespaceURI, String localName,
                            String rawName)
             throws SAXException {
@@ -339,63 +262,10 @@ public class XMLContentHandler implements ContentHandler {
         }
 
         switch (rawName) {
-            case "ARG":
-                argument.addXMLSubtrees();
-                argument.standardToToulmin();
-                argument.standardToWigmore();
-                break;
-            case "SCHEMESET":
-                argument.setSchemeList(argTypeVector);
-                break;
-            case "NAME":
-                argType.setName(contents);
-                argTypeVector.add(argType);
-                break;
-            case "PREMISE":
-                if (contents.length() > 0) {
-                    argType.getPremises().add(contents);
-                }
-                break;
-            case "CONCLUSION":
-                if (contents.length() > 0) {
-                    argType.setConclusion(contents);
-                }
-                break;
-            case "CQ":
-                if (contents.length() > 0) {
-                    argType.getCriticalQuestions().add(contents);
-                }
-                break;
-            case "TEXT":
-                if (contents.length() > 0) {
-                    argument.setText(contents);
-                }
-                break;
-            case "AUTHOR":
-                if (contents.length() > 0) {
-                    argument.setAuthor(contents);
-                }
-                break;
-            case "DATE":
-                if (contents.length() > 0) {
-                    argument.setDate(contents);
-                }
-                break;
-            case "SOURCE":
-                if (contents.length() > 0) {
-                    argument.setSource(contents);
-                }
-                break;
-            case "COMMENTS":
-                if (contents.length() > 0) {
-                    argument.setComments(contents);
-                }
-                break;
             case "REFUTATION": {
                 TreeVertex poppedVertex = (TreeVertex) vertexStack.pop();
                 poppedVertex.addEdge(currentVertex);
                 currentVertex.setHasParent(true);
-                currentVertex.setParent(poppedVertex);
                 currentVertex.setRefutation(true);
                 currentVertex = poppedVertex;
                 break;
@@ -403,48 +273,24 @@ public class XMLContentHandler implements ContentHandler {
             case "CA": {
                 TreeVertex poppedVertex = (TreeVertex) vertexStack.pop();
                 poppedVertex.addEdge(currentVertex);
-                // If we are adding an edge to a dummy root, we are restoring
-                // a broken tree, so we are in an undo operation.
-                // The dummy root is the invisible root that holds the true roots
-                // of the tree fragments.
-                // The parent should only be set to 'true' if it is not a dummy root
-                if (!new String(poppedVertex.getShortLabel()).equals("DummyRoot")) {
-                    currentVertex.setHasParent(true);
-                    currentVertex.setParent(poppedVertex);
-                } else {
-                    argument.setMultiRoots(true);
-                    argument.setDummyRoot(poppedVertex);
-                }
+                currentVertex.setHasParent(true);
                 currentVertex = poppedVertex;
                 break;
             }
             case "LA":
-                TreeVertex virtPop = (TreeVertex) vertexStack.pop();    // Pops virtual vertex
-
                 currentVertex = (TreeVertex) vertexStack.pop();
-                virtPop.setParent(currentVertex);
                 break;
             case "PROPTEXT":
-                String propText = contents;
+                propText = contents;
                 currentVertex = new TreeVertex(propText, shortLabel);
                 currentVertex.setSupportLabel(supportLabel);
                 currentVertex.m_nodeLabel = nodeLabel;
-                currentVertex.roles = diagramRoles;
-                // Check if the shortLabel is numeric and thus update Wigmore index
-                argument.updateWigmoreIndex(shortLabel);
-
-                // Set the short label so that new nodes will be added
-                // after nodes read in from AML file
-                // Only update the label if the current label is greater than
-                // or equal to the current short label
-
-                // TODO: restore short label display parameters
-
                 currentVertex.setOffset(offset);
                 tutorStart = offset;
                 tutorEnd = offset + propText.length();
                 currentVertex.setTutorStart(tutorStart);
                 currentVertex.setTutorEnd(tutorEnd);
+
                 if (missing) {
                     currentVertex.setMissing(true);
                 }
@@ -452,7 +298,7 @@ public class XMLContentHandler implements ContentHandler {
                     currentVertex.setRefutation(true);
                     refutation = false;
                 }
-                tree.addVertex(currentVertex);
+                m_tree.addVertex(currentVertex);
                 // If the top vertex on the stack is virtual, we are within an LA,
                 // so we add an edge between the virtual node and the new PROP
                 if (!vertexStack.isEmpty()) {
@@ -460,7 +306,6 @@ public class XMLContentHandler implements ContentHandler {
                     if (topVertex.isVirtual()) {
                         topVertex.addEdge(currentVertex);
                         currentVertex.setHasParent(true);
-                        currentVertex.setParent(topVertex);
                     }
                 }
                 break;
@@ -511,53 +356,8 @@ public class XMLContentHandler implements ContentHandler {
     public void skippedEntity(String name) throws SAXException {
     }
 
-    public Argument getArgument() {
-        return argument;
-    }
-
-    public void setArgument(Argument argument) {
-        this.argument = argument;
-    }
-
-    public Tree getTree() {
-        return tree;
-    }
-
-    public void setTree(Tree tree) {
-        this.tree = tree;
-    }
-
-    public GeneralPath getShape() {
-        return shape;
-    }
-
-    public void setShape(GeneralPath shape) {
-        this.shape = shape;
-    }
-
-    public boolean isMissing() {
-        return missing;
-    }
-
-    public void setMissing(boolean missing) {
-        this.missing = missing;
-    }
-
-    public boolean isRefutation() {
-        return refutation;
-    }
-
-    public void setRefutation(boolean refutation) {
-        this.refutation = refutation;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
 }
+
+
+  
 
